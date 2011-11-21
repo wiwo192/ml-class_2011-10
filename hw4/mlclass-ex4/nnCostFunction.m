@@ -62,26 +62,61 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+z_layer2 = Theta1 * ([ones(m, 1) X]');
+a_layer2 = sigmoid(z_layer2);
 
+z_layer3 = Theta2 * ([ones(1, m) ; a_layer2]);
+h = sigmoid(z_layer3);
 
+% Make Y matrix
+Y = zeros(num_labels, m);
+for i = 1:m
+  Y(y(i), i) = 1;
+endfor
 
+J1 = -Y .* log(h);
+J2 = -(1 - Y) .* log(1 - h);
+J = 1 / m * sum(sum(J1 + J2));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+lambda_term1 = sum(sum(Theta1(1:end, 2:end).^2));
+lambda_term2 = sum(sum(Theta2(1:end, 2:end).^2));
+lambda_term = lambda / (2 * m) * (lambda_term1 + lambda_term2);
+J += lambda_term;
 
 % -------------------------------------------------------------
+DELTA_1 = 0 * Theta1;
+DELTA_2 = 0 * Theta2;
 
+for i = 1:m
+  a_1 = X(i, :)';
+  a_1 = [1 ; a_1];
+
+  z_2 = Theta1 * a_1;
+  a_2 = sigmoid(z_2);
+
+  a_2 = [1 ; a_2];
+  z_3 = Theta2 * a_2;
+  a_3 = sigmoid(z_3);
+
+  delta_3 = a_3 - Y(:, i);
+
+  delta_2 = (Theta2(:, 2:end)' * delta_3) .* sigmoidGradient(z_2);
+
+  %Remove delta0_2
+  % delta_2 = delta_2(2:end);
+
+  DELTA_2 = DELTA_2 + delta_3 * (a_2');
+  DELTA_1 = DELTA_1 + delta_2 * (a_1');
+endfor
+
+Theta1_grad =  1 / m * DELTA_1;
+Theta2_grad =  1 / m * DELTA_2;
+
+lambda_Theta1 = lambda / m .* Theta1;
+lambda_Theta2 = lambda / m .* Theta2;
+
+Theta1_grad(:, 2:end) += lambda_Theta1(:, 2:end);
+Theta2_grad(:, 2:end) += lambda_Theta2(:, 2:end);
 % =========================================================================
 
 % Unroll gradients
